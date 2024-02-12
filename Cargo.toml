@@ -1,0 +1,19 @@
+[package]
+name = "bevy_ehttp"
+description = "A ehttp client plugin for Bevy"
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+repository = "https://github.com/Leinnan/bevy_ehttp"
+authors = ["Piotr Siuszko <siuszko@zoho.com>"]
+license = "MIT OR Apache-2.0"
+keywords = ["bevy", "http", "ehttp", "plugin"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = { version = "0.12", default-features = false, features = ["multi-threaded"] }
+crossbeam-channel = "0.5"
+ehttp = { version = "0.4", features = ["native-async"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
