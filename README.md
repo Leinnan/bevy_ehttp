@@ -1,9 +1,8 @@
 # bevy_ehttp
 
 [![Crates.io](https://img.shields.io/crates/v/bevy_ehttp)](https://crates.io/crates/bevy_ehttp)
-[![crates.io](https://img.shields.io/crates/d/bevy_ehttp)](https://crates.io/crates/bevy_cronjob)
 [![Documentation](https://docs.rs/bevy_ehttp/badge.svg)](https://docs.rs/bevy_ehttp)
-[![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/Seldom-SE/seldom_pixel#license)
+[![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/bevy_ehttp/bevy_ehttp#license)
 
 A ehttp Bevy Plugin that works both on native and on WASM.
 
@@ -47,3 +46,7 @@ fn handle_response(mut requests: EventReader<RequestCompleted>) {
 ## Thanks
 
 Big thanks to the creators of the Bevy Engine and to the [foxzool](https://github.com/foxzool) user for creating [bevy_http_client](https://github.com/foxzool/bevy_http_client) that this plugin is based on.
+
+## License
+
+`bevy_ehttp` is dual-licensed under MIT and Apache 2.0 at your option.
