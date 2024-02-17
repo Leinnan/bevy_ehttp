@@ -50,3 +50,10 @@ Big thanks to the creators of the Bevy Engine and to the [foxzool](https://githu
 ## License
 
 `bevy_ehttp` is dual-licensed under MIT and Apache 2.0 at your option.
+
+## Bevy compatibility table
+
+Bevy version | Crate version
+--- | ---
+0.13 | 0.2
+0.12 | 0.1

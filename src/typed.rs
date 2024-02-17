@@ -1,17 +1,22 @@
 use crate::{HttpRequest, RequestResponse};
 use bevy::ecs::bundle::Bundle;
 use bevy::ecs::event::{Event, EventWriter};
-use bevy::ecs::query::{Added, WorldQuery};
+use bevy::ecs::query::{Added, QueryData};
 use bevy::prelude::{App, Update};
 use bevy::prelude::{Component, Entity, Query};
 use ehttp::{Request, Response};
 use serde::Deserialize;
 use std::marker::PhantomData;
 
-/// function required to call in order to call TypedResponseEvent once request is finished
-pub fn register_request_type<T: Send + Sync + 'static>(app: &mut App) -> &mut App {
-    app.add_systems(Update, handle_typed_response::<T>)
-        .add_event::<TypedResponseEvent<T>>()
+pub trait RegisterRequestTypeTrait {
+    fn register_request_type<T: Send + Sync + 'static>(&mut self) -> &mut Self;
+}
+
+impl RegisterRequestTypeTrait for App {
+    fn register_request_type<T: Send + Sync + 'static>(&mut self) -> &mut Self {
+        self.add_systems(Update, handle_typed_response::<T>)
+            .add_event::<TypedResponseEvent<T>>()
+    }
 }
 
 /// RequestBundle provides easy way to create request that after
@@ -70,8 +75,8 @@ where
     }
 }
 
-#[derive(WorldQuery)]
-#[world_query(mutable)]
+#[derive(QueryData)]
+#[query_data(mutable, derive(Debug))]
 pub struct TypedRequestQuery<T: Send + Sync + 'static> {
     pub entity: Entity,
     pub response: &'static RequestResponse,

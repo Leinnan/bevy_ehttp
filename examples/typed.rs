@@ -7,15 +7,15 @@ pub struct IpInfo {
     pub ip: String,
 }
 fn main() {
-    let mut app = App::new();
-    app.add_plugins((MinimalPlugins, HttpPlugin))
+    App::new()
+        .add_plugins((MinimalPlugins, HttpPlugin))
         .add_systems(Update, handle_response)
         .add_systems(
             Update,
             send_request.run_if(on_timer(std::time::Duration::from_secs(1))),
-        );
-    // register_request_type::<IpInfo>(&mut app);
-    app.run();
+        )
+        .register_request_type::<IpInfo>()
+        .run();
 }
 
 fn send_request(mut commands: Commands) {
@@ -27,10 +27,10 @@ fn handle_response(mut responses: EventReader<TypedResponseEvent<IpInfo>>) {
     for response in &mut responses.read() {
         match response.parse() {
             Some(v) => {
-                println!("response: {:?}", v);
+                println!("response: {:#?}", v);
             }
             None => {
-                println!("Failed to parse: {:?}", response.result);
+                println!("Failed to parse: {:#?}", response.result);
             }
         }
     }
