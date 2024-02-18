@@ -1,7 +1,12 @@
 #![doc = include_str!("../README.md")]
 
+#[cfg(feature = "asset_loading")]
+mod asset_reader;
 mod typed;
 
+#[cfg(feature = "asset_loading")]
+use asset_reader::WebAssetReader;
+use bevy::asset::io::AssetSource;
 use bevy::prelude::*;
 use bevy::tasks::IoTaskPool;
 use crossbeam_channel::{bounded, Receiver};
@@ -24,8 +29,8 @@ pub mod prelude {
 /// use bevy_ehttp::prelude::*;
 ///
 /// App::new()
-///     .add_plugins(DefaultPlugins)
-///     .add_plugins(HttpPlugin).run();
+///     .add_plugins((HttpPlugin,DefaultPlugins))
+///     .run();
 /// ```
 #[derive(Default)]
 pub struct HttpPlugin;
@@ -37,6 +42,16 @@ impl Plugin for HttpPlugin {
         }
         app.add_systems(Update, (handle_request, handle_response));
         app.add_event::<RequestCompleted>();
+
+        #[cfg(feature = "asset_loading")]{
+        app.register_asset_source(
+            "http",
+            AssetSource::build().with_reader(|| Box::new(WebAssetReader::new(false))),
+        )
+        .register_asset_source(
+            "https",
+            AssetSource::build().with_reader(|| Box::new(WebAssetReader::new(true))),
+        );}
     }
 }
 

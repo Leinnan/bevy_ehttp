@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1]
+
+### Added
+
+- New default feature `asset_loading`- support for loading assets from web.
+
 ## [0.2]
 
 ### Changed
