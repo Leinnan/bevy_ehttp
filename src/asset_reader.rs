@@ -8,18 +8,19 @@ use bevy::{
 use std::path::Path;
 
 /// Remote assets reader
-pub struct WebAssetReader {
+pub struct WebAssetReader<const SECURE: bool> {
     reader: Box<dyn AssetReader>,
-    secure: bool,
 }
 
-impl WebAssetReader {
-    pub fn new(secure: bool) -> Self {
+impl<const SECURE: bool> Default for WebAssetReader<SECURE> {
+    fn default() -> Self {
         WebAssetReader {
             reader: AssetSource::get_default_reader("assets".to_string())(),
-            secure,
         }
     }
+}
+
+impl<const SECURE: bool> WebAssetReader<SECURE> {
     async fn download_remote<'a>(
         &'a self,
         url: &Path,
@@ -28,7 +29,7 @@ impl WebAssetReader {
         let Some(url) = url.to_str() else {
             return Err(AssetReaderError::NotFound(url.to_path_buf()));
         };
-        let prefix = if self.secure { "https://" } else { "htpp://" };
+        let prefix = if SECURE { "https://" } else { "htpp://" };
         let url = format!("{prefix}{url}");
         info!("{url}");
         let request = ehttp::Request::get(url);
@@ -54,7 +55,7 @@ impl WebAssetReader {
     }
 }
 
-impl AssetReader for WebAssetReader {
+impl<const SECURE: bool> AssetReader for WebAssetReader<SECURE> {
     fn read<'a>(
         &'a self,
         path: &'a Path,

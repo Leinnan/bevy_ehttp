@@ -43,15 +43,17 @@ impl Plugin for HttpPlugin {
         app.add_systems(Update, (handle_request, handle_response));
         app.add_event::<RequestCompleted>();
 
-        #[cfg(feature = "asset_loading")]{
-        app.register_asset_source(
-            "http",
-            AssetSource::build().with_reader(|| Box::new(WebAssetReader::new(false))),
-        )
-        .register_asset_source(
-            "https",
-            AssetSource::build().with_reader(|| Box::new(WebAssetReader::new(true))),
-        );}
+        #[cfg(feature = "asset_loading")]
+        {
+            app.register_asset_source(
+                "http",
+                AssetSource::build().with_reader(|| Box::new(WebAssetReader::<false>::default())),
+            )
+            .register_asset_source(
+                "https",
+                AssetSource::build().with_reader(|| Box::new(WebAssetReader::<true>::default())),
+            );
+        }
     }
 }
 
