@@ -5,7 +5,7 @@ fn main() {
     App::new()
         .add_plugins((HttpPlugin, DefaultPlugins))
         .add_systems(Startup, setup)
-        .run()
+        .run();
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -27,7 +27,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "Downloading image from web",
+                "Displaying image from web",
                 TextStyle::default(),
             ));
         });

@@ -55,5 +55,6 @@ Big thanks to the creators of the Bevy Engine and to the [foxzool](https://githu
 
 Bevy version | Crate version
 --- | ---
+0.14 | 0.3
 0.13 | 0.2
 0.12 | 0.1

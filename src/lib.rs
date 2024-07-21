@@ -37,7 +37,7 @@ pub struct HttpPlugin;
 
 impl Plugin for HttpPlugin {
     fn build(&self, app: &mut App) {
-        if !app.world.contains_resource::<HttpClientSetting>() {
+        if !app.world().contains_resource::<HttpClientSetting>() {
             app.init_resource::<HttpClientSetting>();
         }
         app.add_systems(Update, (handle_request, handle_response));
@@ -47,11 +47,11 @@ impl Plugin for HttpPlugin {
         {
             app.register_asset_source(
                 "http",
-                AssetSource::build().with_reader(|| Box::new(WebAssetReader::<false>::default())),
+                AssetSource::build().with_reader(|| Box::<WebAssetReader<false>>::default()),
             )
             .register_asset_source(
                 "https",
-                AssetSource::build().with_reader(|| Box::new(WebAssetReader::<true>::default())),
+                AssetSource::build().with_reader(|| Box::<WebAssetReader<true>>::default()),
             );
         }
     }

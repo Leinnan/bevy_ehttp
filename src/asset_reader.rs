@@ -1,15 +1,14 @@
-use bevy::asset::io::{AssetReader, AssetReaderError, PathStream, Reader};
+use bevy::asset::io::{AssetReader, AssetReaderError, ErasedAssetReader, PathStream, Reader};
+use bevy::utils::ConditionalSendFuture;
 use bevy::{
     asset::io::{AssetSource, VecReader},
     log::*,
-    tasks::futures_lite::AsyncRead,
-    utils::BoxedFuture,
 };
 use std::path::Path;
 
 /// Remote assets reader
 pub struct WebAssetReader<const SECURE: bool> {
-    reader: Box<dyn AssetReader>,
+    reader: Box<dyn ErasedAssetReader>,
 }
 
 impl<const SECURE: bool> Default for WebAssetReader<SECURE> {
@@ -24,7 +23,7 @@ impl<const SECURE: bool> WebAssetReader<SECURE> {
     async fn download_remote<'a>(
         &'a self,
         url: &Path,
-    ) -> Result<Box<dyn AsyncRead + Send + Sync + Unpin + 'a>, AssetReaderError> {
+    ) -> Result<Box<Reader<'a>>, AssetReaderError> {
         // A simple GET request is used, but you could set custom headers, auth and so on.
         let Some(url) = url.to_str() else {
             return Err(AssetReaderError::NotFound(url.to_path_buf()));
@@ -59,28 +58,25 @@ impl<const SECURE: bool> AssetReader for WebAssetReader<SECURE> {
     fn read<'a>(
         &'a self,
         path: &'a Path,
-    ) -> BoxedFuture<'a, Result<Box<Reader<'a>>, AssetReaderError>> {
-        Box::pin(self.download_remote(path))
+    ) -> impl ConditionalSendFuture<Output = Result<Box<Reader<'a>>, AssetReaderError>> {
+        self.download_remote(path)
     }
 
     fn read_meta<'a>(
         &'a self,
         path: &'a Path,
-    ) -> BoxedFuture<'a, Result<Box<Reader<'a>>, AssetReaderError>> {
+    ) -> impl ConditionalSendFuture<Output = Result<Box<Reader<'a>>, AssetReaderError>> {
         self.reader.read_meta(path)
     }
 
-    fn is_directory<'a>(
-        &'a self,
-        _path: &'a Path,
-    ) -> BoxedFuture<'a, Result<bool, AssetReaderError>> {
-        Box::pin(async { Ok(false) })
+    async fn is_directory<'a>(&'a self, _path: &'a Path) -> Result<bool, AssetReaderError> {
+        Ok(false)
     }
 
-    fn read_directory<'a>(
+    async fn read_directory<'a>(
         &'a self,
         path: &'a Path,
-    ) -> BoxedFuture<'a, Result<Box<PathStream>, AssetReaderError>> {
-        self.reader.read_directory(path)
+    ) -> Result<Box<PathStream>, AssetReaderError> {
+        Err(AssetReaderError::NotFound(path.to_path_buf()))
     }
 }
