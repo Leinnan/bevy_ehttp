@@ -23,7 +23,7 @@ impl<const SECURE: bool> WebAssetReader<SECURE> {
     async fn download_remote<'a>(
         &'a self,
         url: &Path,
-    ) -> Result<Box<Reader<'a>>, AssetReaderError> {
+    ) -> Result<Box<dyn Reader + 'a>, AssetReaderError> {
         // A simple GET request is used, but you could set custom headers, auth and so on.
         let Some(url) = url.to_str() else {
             return Err(AssetReaderError::NotFound(url.to_path_buf()));
@@ -49,7 +49,7 @@ impl<const SECURE: bool> WebAssetReader<SECURE> {
             }
         };
 
-        let reader: Box<Reader> = Box::new(VecReader::new(body));
+        let reader: Box<dyn Reader> = Box::new(VecReader::new(body));
         Ok(reader)
     }
 }
@@ -58,14 +58,14 @@ impl<const SECURE: bool> AssetReader for WebAssetReader<SECURE> {
     fn read<'a>(
         &'a self,
         path: &'a Path,
-    ) -> impl ConditionalSendFuture<Output = Result<Box<Reader<'a>>, AssetReaderError>> {
+    ) -> impl ConditionalSendFuture<Output = Result<Box<dyn Reader + 'a>, AssetReaderError>> {
         self.download_remote(path)
     }
 
     fn read_meta<'a>(
         &'a self,
         path: &'a Path,
-    ) -> impl ConditionalSendFuture<Output = Result<Box<Reader<'a>>, AssetReaderError>> {
+    ) -> impl ConditionalSendFuture<Output = Result<Box<dyn Reader + 'a>, AssetReaderError>> {
         self.reader.read_meta(path)
     }
 

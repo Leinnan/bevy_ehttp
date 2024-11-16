@@ -1,0 +1,52 @@
+name: build
+
+on:
+  workflow_dispatch:
+    inputs:
+      override_bevy_version:
+        required: false
+        type: string
+  workflow_call:
+  push:
+    branches:
+      - 'main'
+      - 'master'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency: 
+      group: ${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ github.ref || github.run_id }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy,rustfmt
+      - name: Install alsa and udev
+        run: sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+      - name: Get the release version from the input
+        id: version_dispatch
+        shell: bash
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [ -n "${{ inputs.override_bevy_version }}" ]; then cargo add bevy@${{ inputs.override_bevy_version }} --no-default-features --features ["bevy_winit"];
+
+      - name: Format and Clippy
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy -- -D warnings
