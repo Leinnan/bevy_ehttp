@@ -2,7 +2,7 @@ use crate::{HttpRequest, RequestResponse};
 use bevy::ecs::bundle::Bundle;
 use bevy::ecs::event::{Event, EventWriter};
 use bevy::ecs::query::{Added, QueryData};
-use bevy::prelude::{App, Update};
+use bevy::prelude::{App, Commands, Update};
 use bevy::prelude::{Component, Entity, Query};
 use ehttp::{Request, Response};
 use serde::Deserialize;
@@ -56,6 +56,46 @@ where
     res: PhantomData<T>,
 }
 
+#[derive(Event, Clone, Debug)]
+pub struct OnTypedResponse<T>
+where
+    T: Send + Sync,
+{
+    pub result: Result<Response, String>,
+    res: PhantomData<T>,
+}
+
+impl<T> OnTypedResponse<T>
+where
+    T: Send + Sync + 'static,
+{
+    fn new(entry: &TypedRequestQueryReadOnlyItem<T>) -> Self {
+        OnTypedResponse::<T> {
+            result: entry.response.0.clone(),
+            res: PhantomData,
+        }
+    }
+}
+
+impl<T> OnTypedResponse<T>
+where
+    T: for<'a> Deserialize<'a> + Send + Sync,
+{
+    pub fn parse(&self) -> Option<T> {
+        if let Ok(response) = &self.result {
+            match response.text() {
+                Some(s) => match serde_json::from_str::<T>(s) {
+                    Ok(val) => Some(val),
+                    _ => None,
+                },
+                None => None,
+            }
+        } else {
+            None
+        }
+    }
+}
+
 impl<T> TypedResponseEvent<T>
 where
     T: for<'a> Deserialize<'a> + Send + Sync,
@@ -86,11 +126,13 @@ pub struct TypedRequestQuery<T: Send + Sync + 'static> {
 pub fn handle_typed_response<T: Send + Sync + 'static>(
     request_tasks: Query<TypedRequestQuery<T>, Added<RequestResponse>>,
     mut event_writer: EventWriter<TypedResponseEvent<T>>,
+    mut commands: Commands,
 ) {
     for entry in request_tasks.iter() {
         event_writer.send(TypedResponseEvent::<T> {
             result: entry.response.0.clone(),
             res: PhantomData,
         });
+        commands.trigger_targets(OnTypedResponse::<T>::new(&entry), entry.entity);
     }
 }

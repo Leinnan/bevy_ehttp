@@ -14,7 +14,9 @@ use crossbeam_channel::{bounded, Receiver};
 use ehttp::{Request, Response};
 
 pub mod prelude {
-    pub use super::typed::{RegisterRequestTypeTrait, RequestBundle, TypedResponseEvent};
+    pub use super::typed::{
+        OnTypedResponse, RegisterRequestTypeTrait, RequestBundle, TypedResponseEvent,
+    };
     pub use super::{
         HttpClientSetting, HttpPlugin, HttpRequest, RequestCompleted, RequestResponse, RequestTask,
     };

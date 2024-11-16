@@ -9,7 +9,6 @@ pub struct IpInfo {
 fn main() {
     App::new()
         .add_plugins((MinimalPlugins, HttpPlugin))
-        .add_systems(Update, handle_response)
         .add_systems(
             Update,
             send_request.run_if(on_timer(std::time::Duration::from_secs(1))),
@@ -20,18 +19,18 @@ fn main() {
 
 fn send_request(mut commands: Commands) {
     let req = ehttp::Request::get("https://api.ipify.org?format=json");
-    commands.spawn(RequestBundle::<IpInfo>::new(req));
+    commands
+        .spawn(RequestBundle::<IpInfo>::new(req))
+        .observe(handle_response);
 }
 
-fn handle_response(mut responses: EventReader<TypedResponseEvent<IpInfo>>) {
-    for response in &mut responses.read() {
-        match response.parse() {
-            Some(v) => {
-                println!("response: {:#?}", v);
-            }
-            None => {
-                println!("Failed to parse: {:#?}", response.result);
-            }
+fn handle_response(response: Trigger<OnTypedResponse<IpInfo>>) {
+    match response.parse() {
+        Some(v) => {
+            println!("response: {:#?}", v);
+        }
+        None => {
+            println!("Failed to parse: {:#?}", response.result);
         }
     }
 }

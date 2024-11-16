@@ -2,8 +2,13 @@
 
 ## [0.4.0]
 
+### Added 
+
+- `OnTypedResponse` trigger event type.
+
 ### Changed
 
+- Updated `typed` example to use `OnTypedResponse` trigger.
 - Updated to Bevy 0.15
 
 ## [0.3.0]
