@@ -19,7 +19,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         })
         .insert(BackgroundColor(Color::WHITE))
-        .insert(UiImage::new(
+        .insert(ImageNode::new(
             asset_server.load("https://bevyengine.org/news/bevy-0-11/with_ssao.png"),
         ))
         .with_children(|parent| {
