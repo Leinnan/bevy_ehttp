@@ -15,10 +15,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn(Node {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
-            position_type: PositionType::Absolute,
+            align_items: AlignItems::Center,
+            justify_items: JustifyItems::Center,
             ..default()
         })
-        .insert(BackgroundColor(Color::WHITE))
         .insert(ImageNode::new(
             asset_server.load("https://bevyengine.org/news/bevy-0-11/with_ssao.png"),
         ))

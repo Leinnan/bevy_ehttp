@@ -1,5 +1,5 @@
 use bevy::asset::io::{AssetReader, AssetReaderError, ErasedAssetReader, PathStream, Reader};
-use bevy::utils::ConditionalSendFuture;
+use bevy::tasks::ConditionalSendFuture;
 use bevy::{
     asset::io::{AssetSource, VecReader},
     log::*,

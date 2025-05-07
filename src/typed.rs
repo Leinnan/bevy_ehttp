@@ -1,21 +1,26 @@
-use crate::{HttpRequest, RequestResponse};
+use crate::{HttpRequest, OnResponseString, RequestResponseExt};
 use bevy::ecs::bundle::Bundle;
-use bevy::ecs::event::{Event, EventWriter};
-use bevy::ecs::query::{Added, QueryData};
-use bevy::prelude::{App, Commands, Update};
-use bevy::prelude::{Component, Entity, Query};
+use bevy::ecs::event::Event;
+use bevy::ecs::observer::Trigger;
+use bevy::prelude::{App, Commands, Deref};
+use bevy::prelude::{Component, Query};
 use ehttp::{Request, Response};
 use serde::Deserialize;
 use std::marker::PhantomData;
+use std::ops::Deref;
 
 pub trait RegisterRequestTypeTrait {
-    fn register_request_type<T: Send + Sync + 'static>(&mut self) -> &mut Self;
+    fn register_request_type<T: Send + Sync + 'static + for<'a> Deserialize<'a>>(
+        &mut self,
+    ) -> &mut Self;
 }
 
 impl RegisterRequestTypeTrait for App {
-    fn register_request_type<T: Send + Sync + 'static>(&mut self) -> &mut Self {
-        self.add_systems(Update, handle_typed_response::<T>)
-            .add_event::<TypedResponseEvent<T>>()
+    fn register_request_type<T: Send + Sync + 'static + for<'a> Deserialize<'a>>(
+        &mut self,
+    ) -> &mut Self {
+        self.add_observer(on_typed_response::<T>)
+            .add_event::<OnResponseTyped<T>>()
     }
 }
 
@@ -47,47 +52,32 @@ where
 #[derive(Component, Debug, Clone)]
 pub struct RequestType<T>(pub PhantomData<T>);
 
-#[derive(Event, Clone, Debug)]
-pub struct TypedResponseEvent<T>
+#[derive(Event, Clone, Debug, Deref)]
+pub struct OnResponseTyped<T>
 where
     T: Send + Sync,
 {
-    pub result: Result<Response, String>,
-    res: PhantomData<T>,
+    pub request: Result<Response, String>,
+    #[deref]
+    pub data: Option<T>,
 }
 
-#[derive(Event, Clone, Debug)]
-pub struct OnTypedResponse<T>
-where
-    T: Send + Sync,
-{
-    pub result: Result<Response, String>,
-    res: PhantomData<T>,
-}
-
-impl<T> OnTypedResponse<T>
-where
-    T: Send + Sync + 'static,
-{
-    fn new(entry: &TypedRequestQueryReadOnlyItem<T>) -> Self {
-        OnTypedResponse::<T> {
-            result: entry.response.0.clone(),
-            res: PhantomData,
-        }
-    }
-}
-
-impl<T> OnTypedResponse<T>
+impl<T> OnResponseTyped<T>
 where
     T: for<'a> Deserialize<'a> + Send + Sync,
 {
-    pub fn parse(&self) -> Option<T> {
-        if let Ok(response) = &self.result {
+    fn new(response: &OnResponseString) -> Self {
+        let data = Self::try_parse(response);
+        OnResponseTyped::<T> {
+            request: response.0.clone(),
+            data,
+        }
+    }
+
+    pub fn try_parse(response: &OnResponseString) -> Option<T> {
+        if let Ok(response) = &**response {
             match response.text() {
-                Some(s) => match serde_json::from_str::<T>(s) {
-                    Ok(val) => Some(val),
-                    _ => None,
-                },
+                Some(s) => serde_json::from_str::<T>(s).ok(),
                 None => None,
             }
         } else {
@@ -96,43 +86,22 @@ where
     }
 }
 
-impl<T> TypedResponseEvent<T>
+impl<T> RequestResponseExt for OnResponseTyped<T>
 where
     T: for<'a> Deserialize<'a> + Send + Sync,
 {
-    pub fn parse(&self) -> Option<T> {
-        if let Ok(response) = &self.result {
-            match response.text() {
-                Some(s) => match serde_json::from_str::<T>(s) {
-                    Ok(val) => Some(val),
-                    _ => None,
-                },
-                None => None,
-            }
-        } else {
-            None
-        }
+    fn response(&self) -> &Result<Response, String> {
+        &self.request
     }
 }
 
-#[derive(QueryData)]
-#[query_data(mutable, derive(Debug))]
-pub struct TypedRequestQuery<T: Send + Sync + 'static> {
-    pub entity: Entity,
-    pub response: &'static RequestResponse,
-    pub type_info: &'static RequestType<T>,
-}
-
-pub fn handle_typed_response<T: Send + Sync + 'static>(
-    request_tasks: Query<TypedRequestQuery<T>, Added<RequestResponse>>,
-    mut event_writer: EventWriter<TypedResponseEvent<T>>,
+pub fn on_typed_response<T: Send + Sync + 'static + for<'a> Deserialize<'a>>(
+    trigger: Trigger<OnResponseString>,
+    request_tasks: Query<&RequestType<T>>,
     mut commands: Commands,
 ) {
-    for entry in request_tasks.iter() {
-        event_writer.send(TypedResponseEvent::<T> {
-            result: entry.response.0.clone(),
-            res: PhantomData,
-        });
-        commands.trigger_targets(OnTypedResponse::<T>::new(&entry), entry.entity);
+    let e = trigger.target();
+    if request_tasks.contains(e) {
+        commands.trigger_targets(OnResponseTyped::<T>::new(trigger.deref()), e);
     }
 }

@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.5.0]
+
+### Added 
+
+- `RequestResponseExt` trait for response events.
+
+### Changed
+
+- Updated to Bevy 0.16
+- Naming pass
+  - `OnTypedResponse` -> `OnResponseTyped`
+  - `RequestCompleted` -> `OnResponseString`
+- Response as a component (`RequestResponse`) is now hidden behind `response_as_component` and likely to be removed in next release.
+- `OnResponseTyped` has parsing done on creation. `result` field got renamed to `request` and `PhantomData` field got removed. One new field is `data` which holds `Option<T>` with parsing result.
+
+### Removed
+
+- `TypedRequestQuery` QueryData got removed, detecting typed responses now uses observer for that.
+
 ## [0.4.0]
 
 ### Added 

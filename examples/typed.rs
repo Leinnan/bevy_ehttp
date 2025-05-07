@@ -24,13 +24,6 @@ fn send_request(mut commands: Commands) {
         .observe(handle_response);
 }
 
-fn handle_response(response: Trigger<OnTypedResponse<IpInfo>>) {
-    match response.parse() {
-        Some(v) => {
-            println!("response: {:#?}", v);
-        }
-        None => {
-            println!("Failed to parse: {:#?}", response.result);
-        }
-    }
+fn handle_response(response: Trigger<OnResponseTyped<IpInfo>>) {
+    println!("Response: {:?}", **response);
 }

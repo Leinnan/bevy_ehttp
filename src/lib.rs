@@ -14,11 +14,12 @@ use crossbeam_channel::{bounded, Receiver};
 use ehttp::{Request, Response};
 
 pub mod prelude {
-    pub use super::typed::{
-        OnTypedResponse, RegisterRequestTypeTrait, RequestBundle, TypedResponseEvent,
-    };
+    pub use super::typed::{OnResponseTyped, RegisterRequestTypeTrait, RequestBundle};
+    #[cfg(feature = "response_as_component")]
+    pub use super::RequestResponse;
     pub use super::{
-        HttpClientSetting, HttpPlugin, HttpRequest, RequestCompleted, RequestResponse, RequestTask,
+        HttpClientSetting, HttpPlugin, HttpRequest, OnResponseString, RequestResponseExt,
+        RequestTask,
     };
     pub use ehttp::{Error, Request, Response};
 }
@@ -43,7 +44,7 @@ impl Plugin for HttpPlugin {
             app.init_resource::<HttpClientSetting>();
         }
         app.add_systems(Update, (handle_request, handle_response));
-        app.add_event::<RequestCompleted>();
+        app.add_event::<OnResponseString>();
 
         #[cfg(feature = "asset_loading")]
         {
@@ -59,7 +60,7 @@ impl Plugin for HttpPlugin {
     }
 }
 
-/// The setting of http client.
+/// Settings of http client.
 /// can set the max concurrent request.
 #[derive(Resource)]
 pub struct HttpClientSetting {
@@ -93,6 +94,19 @@ impl HttpClientSetting {
     }
 }
 
+pub trait RequestResponseExt {
+    fn response(&self) -> &Result<Response, String>;
+
+    /// Did we get a 2xx response code?
+    fn success(&self) -> bool {
+        self.response().as_ref().is_ok_and(|f| f.ok)
+    }
+    /// The URL we ended up at. This can differ from the request url when we have followed redirects.
+    fn url(&self) -> Result<&String, &String> {
+        self.response().as_ref().map(|e| &e.url)
+    }
+}
+
 /// wrap for ehttp request
 #[derive(Component, Debug, Clone, Deref, DerefMut)]
 pub struct HttpRequest(pub Request);
@@ -114,12 +128,21 @@ impl HttpRequest {
     }
 }
 
+#[cfg(feature = "response_as_component")]
 /// wrap for ehttp response
 #[derive(Component, Debug, Clone, Deref, DerefMut)]
 pub struct RequestResponse(pub Result<Response, String>);
 
+/// Wraps ehttp response without parsing it.
+/// For parsed version use ``
 #[derive(Event, DerefMut, Deref)]
-pub struct RequestCompleted(pub Result<Response, String>);
+pub struct OnResponseString(pub Result<Response, String>);
+
+impl RequestResponseExt for OnResponseString {
+    fn response(&self) -> &Result<Response, String> {
+        &self.0
+    }
+}
 
 /// task for ehttp response result
 #[derive(Component)]
@@ -129,11 +152,7 @@ pub struct RequestTask {
 
 impl RequestTask {
     fn poll(&mut self) -> Option<Result<Response, ehttp::Error>> {
-        if let Ok(v) = self.receiver.try_recv() {
-            Some(v)
-        } else {
-            None
-        }
+        self.receiver.try_recv().ok()
     }
 }
 
@@ -168,15 +187,15 @@ fn handle_response(
     mut commands: Commands,
     mut req_res: ResMut<HttpClientSetting>,
     mut request_tasks: Query<(Entity, &mut RequestTask)>,
-    mut event_writer: EventWriter<RequestCompleted>,
 ) {
     for (e, mut task) in request_tasks.iter_mut() {
         if let Some(result) = task.poll() {
-            commands
-                .entity(e)
-                .insert(RequestResponse(result.clone()))
-                .remove::<RequestTask>();
-            event_writer.send(RequestCompleted(result));
+            let mut cmd = commands.entity(e);
+
+            #[cfg(feature = "response_as_component")]
+            cmd.insert(RequestResponse(result.clone()));
+            cmd.remove::<RequestTask>();
+            cmd.trigger(OnResponseString(result));
             req_res.current_clients -= 1;
         }
     }
