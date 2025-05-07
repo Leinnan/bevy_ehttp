@@ -6,7 +6,7 @@
 
 A ehttp Bevy Plugin that works both on native and on WASM.
 
-Simple request will invoke `RequestCompleted(pub Result<Response, String>)` event once completed.
+Simple request will invoke `OnResponseString(pub Result<Response, String>)` event once completed.
 
 There is also option to call typed request that will allow to deserialize response to given type by using `RequestBundle<T>`. More details available in [typed.rs example](examples/typed.rs).
 
@@ -19,28 +19,25 @@ use bevy_ehttp::prelude::*;
 fn main() {
     App::new()
         .add_plugins((MinimalPlugins, HttpPlugin))
-        .add_systems(Update, handle_response)
         .add_systems(
             Update,
             send_request.run_if(on_timer(std::time::Duration::from_secs(1))),
         )
+        .add_observer(on_response)
         .run();
 }
 
 fn send_request(mut commands: Commands) {
-    let req = ehttp::Request::get("https://api.ipify.org?format=json");
+    let req = ehttp::Request::get("https://api.ipify.org/eee?format=json");
     commands.spawn(HttpRequest(req));
 }
 
-fn handle_response(mut requests: EventReader<RequestCompleted>) {
-    for request in &mut requests.read() {
-        match &**request {
-            Ok(response) => println!("response: {:?}", response.text()),
-            Err(e) => println!("response error: {:?}", e),
-        }
+fn on_response(t: Trigger<OnResponseString>) {
+    match &**t {
+        Ok(response) => println!("[{:?}]: {:?}", t.url(), response.text()),
+        Err(e) => println!("response error: {:?}", e),
     }
 }
-
 ```
 
 ## Thanks
@@ -55,6 +52,7 @@ Big thanks to the creators of the Bevy Engine and to the [foxzool](https://githu
 
 Bevy version | Crate version
 --- | ---
+0.16 | 0.5
 0.15 | 0.4
 0.14 | 0.3
 0.13 | 0.2

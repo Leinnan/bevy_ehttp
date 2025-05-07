@@ -17,7 +17,7 @@ asset_loading = []
 response_as_component = []
 
 [dependencies]
-bevy = { version = "0.16", default-features = false, features = ["multi_threaded","bevy_asset"] }
+bevy = { version = "0.16", default-features = false, features = ["bevy_log","multi_threaded","bevy_asset"] }
 crossbeam-channel = "0.5"
 ehttp = { version = "0.5", features = ["native-async"] }
 serde = { version = "1.0", features = ["derive"] }

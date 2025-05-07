@@ -30,7 +30,6 @@ impl<const SECURE: bool> WebAssetReader<SECURE> {
         };
         let prefix = if SECURE { "https://" } else { "htpp://" };
         let url = format!("{prefix}{url}");
-        info!("{url}");
         let request = ehttp::Request::get(url);
 
         let body = match ehttp::fetch_async(request).await {
