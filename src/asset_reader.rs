@@ -28,7 +28,7 @@ impl<const SECURE: bool> WebAssetReader<SECURE> {
         let Some(url) = url.to_str() else {
             return Err(AssetReaderError::NotFound(url.to_path_buf()));
         };
-        let prefix = if SECURE { "https://" } else { "htpp://" };
+        let prefix = if SECURE { "https://" } else { "http://" };
         let url = format!("{prefix}{url}");
         let request = ehttp::Request::get(url);
 
