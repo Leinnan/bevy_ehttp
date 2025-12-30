@@ -10,6 +10,10 @@
   - `OnResponseString` -> `ResponseString`
 - reduced dependencies amount
 
+### Fixed
+
+- incorrect http scheme for `http://` assets.
+
 ## [0.6.1]
 
 ### Fixed
