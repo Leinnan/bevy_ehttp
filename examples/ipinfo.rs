@@ -13,11 +13,10 @@ fn main() {
 }
 
 fn send_request(mut commands: Commands) {
-    let req = ehttp::Request::get("https://api.ipify.org/eee?format=json");
-    commands.spawn(HttpRequest(req));
+    commands.spawn(HttpRequest::get("https://api.ipify.org?format=json"));
 }
 
-fn on_response(t: Trigger<OnResponseString>) {
+fn on_response(t: On<OnResponseString>) {
     match &**t {
         Ok(response) => println!("[{:?}]: {:?}", t.url(), response.text()),
         Err(e) => println!("response error: {:?}", e),

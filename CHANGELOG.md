@@ -1,8 +1,16 @@
 # Changelog
 
+## [0.6.0]
+
+### Changed
+
+- Updated to Bevy 0.17
+- Bump Rust edition to 2024
+- `OnResponseTyped` and `OnResponseString` became `EntityEvent`
+
 ## [0.5.0]
 
-### Added 
+### Added
 
 - `RequestResponseExt` trait for response events.
 
@@ -21,7 +29,7 @@
 
 ## [0.4.0]
 
-### Added 
+### Added
 
 - `OnTypedResponse` trigger event type.
 

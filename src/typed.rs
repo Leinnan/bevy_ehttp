@@ -1,7 +1,8 @@
 use crate::{HttpRequest, OnResponseString, RequestResponseExt};
 use bevy::ecs::bundle::Bundle;
-use bevy::ecs::event::Event;
-use bevy::ecs::observer::Trigger;
+use bevy::ecs::entity::Entity;
+use bevy::ecs::event::EntityEvent;
+use bevy::ecs::observer::On;
 use bevy::prelude::{App, Commands, Deref};
 use bevy::prelude::{Component, Query};
 use ehttp::{Request, Response};
@@ -20,7 +21,6 @@ impl RegisterRequestTypeTrait for App {
         &mut self,
     ) -> &mut Self {
         self.add_observer(on_typed_response::<T>)
-            .add_event::<OnResponseTyped<T>>()
     }
 }
 
@@ -47,12 +47,24 @@ where
             request_type: RequestType::<T>(PhantomData),
         }
     }
+
+    /// Creates a new RequestBundle that will send a GET request to the given URL.
+    pub fn get(url: impl ToString) -> Self {
+        let req = ehttp::Request::get(url);
+        Self::new(req)
+    }
+
+    /// Adds a header to the request.
+    pub fn with_header(mut self, key: impl ToString, value: impl ToString) -> Self {
+        self.request.headers.insert(key, value);
+        self
+    }
 }
 
 #[derive(Component, Debug, Clone)]
 pub struct RequestType<T>(pub PhantomData<T>);
 
-#[derive(Event, Clone, Debug, Deref)]
+#[derive(EntityEvent, Clone, Debug, Deref)]
 pub struct OnResponseTyped<T>
 where
     T: Send + Sync,
@@ -60,6 +72,7 @@ where
     pub request: Result<Response, String>,
     #[deref]
     pub data: Option<T>,
+    pub entity: Entity,
 }
 
 impl<T> OnResponseTyped<T>
@@ -69,8 +82,9 @@ where
     fn new(response: &OnResponseString) -> Self {
         let data = Self::try_parse(response);
         OnResponseTyped::<T> {
-            request: response.0.clone(),
+            request: response.response.clone(),
             data,
+            entity: response.entity,
         }
     }
 
@@ -96,12 +110,12 @@ where
 }
 
 pub fn on_typed_response<T: Send + Sync + 'static + for<'a> Deserialize<'a>>(
-    trigger: Trigger<OnResponseString>,
+    trigger: On<OnResponseString>,
     request_tasks: Query<&RequestType<T>>,
     mut commands: Commands,
 ) {
-    let e = trigger.target();
+    let e = trigger.entity;
     if request_tasks.contains(e) {
-        commands.trigger_targets(OnResponseTyped::<T>::new(trigger.deref()), e);
+        commands.trigger(OnResponseTyped::<T>::new(trigger.deref()));
     }
 }

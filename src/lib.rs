@@ -9,14 +9,14 @@ use asset_reader::WebAssetReader;
 use bevy::asset::io::AssetSource;
 use bevy::prelude::*;
 use bevy::tasks::IoTaskPool;
-use crossbeam_channel::{bounded, Receiver};
+use crossbeam_channel::{Receiver, bounded};
 
 use ehttp::{Request, Response};
 
 pub mod prelude {
-    pub use super::typed::{OnResponseTyped, RegisterRequestTypeTrait, RequestBundle};
     #[cfg(feature = "response_as_component")]
     pub use super::RequestResponse;
+    pub use super::typed::{OnResponseTyped, RegisterRequestTypeTrait, RequestBundle};
     pub use super::{
         HttpClientSetting, HttpPlugin, HttpRequest, OnResponseString, RequestResponseExt,
         RequestTask,
@@ -44,7 +44,6 @@ impl Plugin for HttpPlugin {
             app.init_resource::<HttpClientSetting>();
         }
         app.add_systems(Update, (handle_request, handle_response));
-        app.add_event::<OnResponseString>();
 
         #[cfg(feature = "asset_loading")]
         {
@@ -135,12 +134,16 @@ pub struct RequestResponse(pub Result<Response, String>);
 
 /// Wraps ehttp response without parsing it.
 /// For parsed version use ``
-#[derive(Event, DerefMut, Deref)]
-pub struct OnResponseString(pub Result<Response, String>);
+#[derive(EntityEvent, DerefMut, Deref)]
+pub struct OnResponseString {
+    #[deref]
+    pub response: Result<Response, String>,
+    pub entity: Entity,
+}
 
 impl RequestResponseExt for OnResponseString {
     fn response(&self) -> &Result<Response, String> {
-        &self.0
+        &self.response
     }
 }
 
@@ -195,7 +198,10 @@ fn handle_response(
             #[cfg(feature = "response_as_component")]
             cmd.insert(RequestResponse(result.clone()));
             cmd.remove::<RequestTask>();
-            cmd.trigger(OnResponseString(result));
+            cmd.trigger(|entity| OnResponseString {
+                response: result,
+                entity,
+            });
             req_res.current_clients -= 1;
         }
     }

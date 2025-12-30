@@ -18,12 +18,13 @@ fn main() {
 }
 
 fn send_request(mut commands: Commands) {
-    let req = ehttp::Request::get("https://api.ipify.org?format=json");
     commands
-        .spawn(RequestBundle::<IpInfo>::new(req))
+        .spawn(RequestBundle::<IpInfo>::get(
+            "https://api.ipify.org?format=json",
+        ))
         .observe(handle_response);
 }
 
-fn handle_response(response: Trigger<OnResponseTyped<IpInfo>>) {
+fn handle_response(response: On<OnResponseTyped<IpInfo>>) {
     println!("Response: {:?}", **response);
 }
