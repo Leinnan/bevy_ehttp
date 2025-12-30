@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main,master]
+    branches: [main, master]
   pull_request:
-    branches: [main,master]
+    branches: [main, master]
 
 env:
   CARGO_TERM_COLOR: always
@@ -27,8 +27,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
-      - name: Install alsa and udev
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+      - name: Install deps
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
       - name: check
         run: cargo check
       - name: examples
