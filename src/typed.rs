@@ -1,14 +1,14 @@
-use crate::{HttpRequest, OnResponseString, RequestResponseExt};
-use bevy::ecs::bundle::Bundle;
-use bevy::ecs::entity::Entity;
-use bevy::ecs::event::EntityEvent;
-use bevy::ecs::observer::On;
-use bevy::prelude::{App, Commands, Deref};
-use bevy::prelude::{Component, Query};
+use crate::{HttpRequest, RequestResponseExt, ResponseString};
+use bevy_app::App;
+use bevy_derive::Deref;
+use bevy_ecs::entity::Entity;
+use bevy_ecs::event::EntityEvent;
+use bevy_ecs::observer::On;
+use bevy_ecs::system::{Commands, Query};
+use bevy_ecs::{bundle::Bundle, component::Component};
 use ehttp::{Request, Response};
 use serde::Deserialize;
 use std::marker::PhantomData;
-use std::ops::Deref;
 
 pub trait RegisterRequestTypeTrait {
     fn register_request_type<T: Send + Sync + 'static + for<'a> Deserialize<'a>>(
@@ -65,7 +65,7 @@ where
 pub struct RequestType<T>(pub PhantomData<T>);
 
 #[derive(EntityEvent, Clone, Debug, Deref)]
-pub struct OnResponseTyped<T>
+pub struct ResponseTyped<T>
 where
     T: Send + Sync,
 {
@@ -75,20 +75,20 @@ where
     pub entity: Entity,
 }
 
-impl<T> OnResponseTyped<T>
+impl<T> ResponseTyped<T>
 where
     T: for<'a> Deserialize<'a> + Send + Sync,
 {
-    fn new(response: &OnResponseString) -> Self {
+    fn new(response: &ResponseString) -> Self {
         let data = Self::try_parse(response);
-        OnResponseTyped::<T> {
+        ResponseTyped::<T> {
             request: response.response.clone(),
             data,
             entity: response.entity,
         }
     }
 
-    pub fn try_parse(response: &OnResponseString) -> Option<T> {
+    pub fn try_parse(response: &ResponseString) -> Option<T> {
         if let Ok(response) = &**response {
             match response.text() {
                 Some(s) => serde_json::from_str::<T>(s).ok(),
@@ -100,7 +100,7 @@ where
     }
 }
 
-impl<T> RequestResponseExt for OnResponseTyped<T>
+impl<T> RequestResponseExt for ResponseTyped<T>
 where
     T: for<'a> Deserialize<'a> + Send + Sync,
 {
@@ -110,12 +110,12 @@ where
 }
 
 pub fn on_typed_response<T: Send + Sync + 'static + for<'a> Deserialize<'a>>(
-    trigger: On<OnResponseString>,
+    trigger: On<ResponseString>,
     request_tasks: Query<&RequestType<T>>,
     mut commands: Commands,
 ) {
     let e = trigger.entity;
     if request_tasks.contains(e) {
-        commands.trigger(OnResponseTyped::<T>::new(trigger.deref()));
+        commands.trigger(ResponseTyped::<T>::new(&trigger));
     }
 }

@@ -16,7 +16,7 @@ fn send_request(mut commands: Commands) {
     commands.spawn(HttpRequest::get("https://api.ipify.org?format=json"));
 }
 
-fn on_response(t: On<OnResponseString>) {
+fn on_response(t: On<ResponseString>) {
     match &**t {
         Ok(response) => println!("[{:?}]: {:?}", t.url(), response.text()),
         Err(e) => println!("response error: {:?}", e),

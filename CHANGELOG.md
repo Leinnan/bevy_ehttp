@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.0]
+
+### Changed
+
+- Updated to Bevy 0.18
+- Naming pass
+  - `OnResponseTyped` -> `ResponseTyped`
+  - `OnResponseString` -> `ResponseString`
+- reduced dependencies amount
+
 ## [0.6.1]
 
 ### Fixed

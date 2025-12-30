@@ -25,6 +25,6 @@ fn send_request(mut commands: Commands) {
         .observe(handle_response);
 }
 
-fn handle_response(response: On<OnResponseTyped<IpInfo>>) {
+fn handle_response(response: On<ResponseTyped<IpInfo>>) {
     println!("Response: {:?}", **response);
 }

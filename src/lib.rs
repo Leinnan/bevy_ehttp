@@ -6,9 +6,18 @@ mod typed;
 
 #[cfg(feature = "asset_loading")]
 use asset_reader::WebAssetReader;
-use bevy::asset::io::AssetSource;
-use bevy::prelude::*;
-use bevy::tasks::IoTaskPool;
+use bevy_app::{App, Plugin, Update};
+use bevy_derive::{Deref, DerefMut};
+use bevy_ecs::{
+    component::Component,
+    entity::Entity,
+    event::EntityEvent,
+    prelude::Query,
+    query::Without,
+    resource::Resource,
+    system::{Commands, ResMut},
+};
+use bevy_tasks::IoTaskPool;
 use crossbeam_channel::{Receiver, bounded};
 
 use ehttp::{Request, Response};
@@ -16,10 +25,9 @@ use ehttp::{Request, Response};
 pub mod prelude {
     #[cfg(feature = "response_as_component")]
     pub use super::RequestResponse;
-    pub use super::typed::{OnResponseTyped, RegisterRequestTypeTrait, RequestBundle};
+    pub use super::typed::{RegisterRequestTypeTrait, RequestBundle, ResponseTyped};
     pub use super::{
-        HttpClientSetting, HttpPlugin, HttpRequest, OnResponseString, RequestResponseExt,
-        RequestTask,
+        HttpClientSetting, HttpPlugin, HttpRequest, RequestResponseExt, RequestTask, ResponseString,
     };
     pub use ehttp::{Error, Request, Response};
 }
@@ -47,13 +55,15 @@ impl Plugin for HttpPlugin {
 
         #[cfg(feature = "asset_loading")]
         {
+            use bevy_asset::{AssetApp, io::AssetSourceBuilder};
+
             app.register_asset_source(
                 "http",
-                AssetSource::build().with_reader(|| Box::<WebAssetReader<false>>::default()),
+                AssetSourceBuilder::new(|| Box::<WebAssetReader<false>>::default()),
             )
             .register_asset_source(
                 "https",
-                AssetSource::build().with_reader(|| Box::<WebAssetReader<true>>::default()),
+                AssetSourceBuilder::new(|| Box::<WebAssetReader<true>>::default()),
             );
         }
     }
@@ -135,13 +145,13 @@ pub struct RequestResponse(pub Result<Response, String>);
 /// Wraps ehttp response without parsing it.
 /// For parsed version use ``
 #[derive(EntityEvent, DerefMut, Deref)]
-pub struct OnResponseString {
+pub struct ResponseString {
     #[deref]
     pub response: Result<Response, String>,
     pub entity: Entity,
 }
 
-impl RequestResponseExt for OnResponseString {
+impl RequestResponseExt for ResponseString {
     fn response(&self) -> &Result<Response, String> {
         &self.response
     }
@@ -194,11 +204,10 @@ fn handle_response(
     for (e, mut task) in request_tasks.iter_mut() {
         if let Some(result) = task.poll() {
             let mut cmd = commands.entity(e);
-
             #[cfg(feature = "response_as_component")]
             cmd.insert(RequestResponse(result.clone()));
             cmd.remove::<RequestTask>();
-            cmd.trigger(|entity| OnResponseString {
+            cmd.trigger(|entity| ResponseString {
                 response: result,
                 entity,
             });
