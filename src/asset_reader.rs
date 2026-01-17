@@ -1,6 +1,5 @@
 use bevy_asset::io::{
-    AssetReader, AssetReaderError, AssetSource, ErasedAssetReader, PathStream, Reader,
-    ReaderRequiredFeatures, VecReader,
+    AssetReader, AssetReaderError, AssetSource, ErasedAssetReader, PathStream, Reader, VecReader,
 };
 use bevy_log::*;
 use bevy_tasks::ConditionalSendFuture;
@@ -57,7 +56,6 @@ impl<const SECURE: bool> AssetReader for WebAssetReader<SECURE> {
     fn read<'a>(
         &'a self,
         path: &'a Path,
-        _required_features: ReaderRequiredFeatures,
     ) -> impl ConditionalSendFuture<Output = Result<Box<dyn Reader + 'a>, AssetReaderError>> {
         self.download_remote(path)
     }
