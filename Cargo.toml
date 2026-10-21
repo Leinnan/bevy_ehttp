@@ -1,7 +1,7 @@
 [package]
 name = "bevy_ehttp"
 description = "A ehttp client plugin for Bevy"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2024"
 readme = "README.md"
 repository = "https://github.com/Leinnan/bevy_ehttp"
@@ -17,19 +17,19 @@ asset_loading = []
 response_as_component = []
 
 [dependencies]
-bevy_log = "0.19"
-bevy_asset = "0.19"
-bevy_tasks = "0.19"
-bevy_ecs = "0.19"
-bevy_app = "0.19"
-bevy_derive = "0.19"
+bevy_log = "0.20"
+bevy_asset = "0.20"
+bevy_tasks = "0.20"
+bevy_ecs = "0.20"
+bevy_app = "0.20"
+bevy_derive = "0.20"
 crossbeam-channel = "0.5"
-ehttp = { version = "0.5", features = ["native-async"] }
+ehttp = { version = "0.7.2", features = ["native-async"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 [dev-dependencies]
-bevy = { version = "0.19", default-features = false, features = [
+bevy = { version = "0.20", default-features = false, features = [
     "bevy_asset",
     "bevy_color",
     "bevy_core_pipeline",

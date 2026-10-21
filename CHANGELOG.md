@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0]
+
+### Changed
+
+- Updated to Bevy 0.20
+- Updated to ehttp 0.7.2
+
 ## [0.8.0]
 
 ### Changed
